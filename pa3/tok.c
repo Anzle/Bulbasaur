@@ -87,6 +87,13 @@ if (tk == NULL || tk->pos == strlen(tk->token))
 		strncpy(word, tk->token + start, length);
 		word[length] = '\0';
 		
+		int i=0;
+		 //size of array is length + 1, however since we 
+		 // don't need to convert '\0' we don't iterate over it.
+		while(i<length){
+			word[i] = tolower(word[i]);
+		}
+		
 	}
 	else{
 	return TKGetNextToken(++tk->pos);
