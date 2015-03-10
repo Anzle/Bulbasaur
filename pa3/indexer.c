@@ -7,6 +7,41 @@
 #include "sorted-list.h"
 #include "indexer.h"
 
+//Create new indexer object and return it 
+IndexerPtr createIndexer(){
+	IndexerPtr indexPtr = (IndexerPtr) malloc(sizeof(Indexer));
+	if(!indexPtr)
+		return NULL;
+		
+	memset(indexPtr, 0, sizeof(Indexer));
+		
+	return indexPtr;
+}
+
+//Free all data stored in the indexer
+void destroyIndexer(IndexerPtr i){
+	if(!i){
+		return;
+	}
+	
+	int x;
+	for(x = 0; x<26; x++){
+		if(i->index[x]){
+			SLDestroy(i->index[x]);
+		}
+	}
+	free(i);
+}
+
+int insertToken(IndexerPtr ind, const char* tok, const char* file, const int freq){
+	if(!ind){
+		return -1; //error, null indexer
+	}
+	
+	//Create nodes and insert into the map
+}
+
+
 /*
  * Comparator function for FileNode. Compares based on frequency.
  * Returns 
