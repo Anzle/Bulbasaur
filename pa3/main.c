@@ -32,7 +32,7 @@ void resetInput(struct input* iptr , int fd){
 	iptr->length = 0;
 }
 
-int readinput(struct input* iptr, ){
+int readInput(struct input* iptr){
 	char c;
 	if(iptr->used < iptr->length){
 		c = iptr->buffer[iptr->used];
@@ -40,7 +40,7 @@ int readinput(struct input* iptr, ){
         return c;
 	}
     else if((iptr->length = read(iptr->fd, iptr->buffer, sizeof(iptr->buffer))) < 1){
-        return -1
+        return -1;
     }
     else{
         c = iptr->buffer[0];
@@ -49,17 +49,47 @@ int readinput(struct input* iptr, ){
     }
 }
 
-
-//Find the size of the file
-off_t fsize(const char *filename) {
-    struct stat st;
-
-    if (stat(filename, &st) == 0)
-        return st.st_size;
-
-    fprintf(stderr, "Cannot determine size of %s: %s\n", filename, strerror(errno));
-
-    return -1;
+char * tokenize(input * iptr){
+	
+	int length = 0, size = 100;
+	char * tok = NULL, * extend = NULL;
+	char c;
+	tok = (char*)malloc(sizeof(char)*(size + 1));
+	tok[size] = '\0'; //counts as a string now
+	
+	//Loop until we create a token
+	while((c = readInput(iptr)) > -1){ 
+		if (isalpha((char)c)){
+			tok[length++] = c;
+			while (isalnum((char)(c = readInput(iptr))) ){
+				tok[length++] = (char)c;
+				
+				if(length == size){
+					//increase the size of the string
+					size += 100;
+					extend = (char*)malloc(sizeof(char)*(size + 1));
+					strcpy(extend, tok);
+					extend[size] = '\0';
+					
+					free(tok);
+					
+					tok = extend;
+					extend = NULL;
+				}
+			}
+			
+			int i=0; 
+			while(i<length){
+				tok[i] = tolower(tok[i]);
+				i++;
+			}
+			return tok;
+		}
+	}
+	//No more tokens... or failure
+	//get rid of unused malloc
+	free(tok);
+	return NULL;
 }
 
 int main(int argv, char ** argc){
@@ -76,23 +106,18 @@ int main(int argv, char ** argc){
     }
     
 	//Set up the input reading buffer
-	input * iptr;
+	input * iptr = (input*)malloc(sizeof(input));
 	resetInput(iptr, filedesc);
-	
-	//Determine the size of the file, I don't think we will have any files over 4 GB
-	unsigned int filesize = (unsigned int)fsize(argc[2]);
-	unsigned int i = 0;
-	unsigned int block = filesize/bufferSize;
-	for(i; i<block; i++){
-		resetInput(iptr, filedesc);
-		if(read(iptr->fd, iptr->buffer, bufferSize) < 0){
-			 fprintf(stderr, "The read failed\n");
-			 return 1;
-		}
-		int j = 0;
-		while(j < 2048)
-			printf("%c", iptr->buffer[j++]);
+
+	char* tok = tokenize(iptr);
+	while (tok != NULL){
+		printf("%s \n", tok);
+		free(tok);
+		tok = tokenize(iptr);
 	}
+
+	free(iptr);
+	
 
     return 0;
 }
