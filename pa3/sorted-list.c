@@ -59,7 +59,8 @@ void SLDestroy(SortedListPtr list){
  * of existing objects in the list, then the subset can be kept in any
  * order.
  *
- * If the function succeeds, it returns 1, othrewise it returns 0.
+ * If the function succeeds, it returns 1, othrewise it returns 0
+ * the method returns -1 if the object is already in the list
  *
  * You need to fill in this function as part of your implementation.
  */
@@ -93,11 +94,14 @@ int SLInsert(SortedListPtr list, void *newObj){
 	//Case: Larger than head
 	cur = list->head;
 	res = list->comparator(obj->data,cur->data);
-	if(res == 0 || res == 1){
+	if(res == 1){
 		obj->next = cur;
 		list->head = obj;
 		return 1;
-	}else if(!cur->next){
+	}else if(res == 0){
+        return -1;
+    }
+    else if(!cur->next){
 		cur->next = obj;
 		return 1;
 	}
@@ -109,10 +113,11 @@ int SLInsert(SortedListPtr list, void *newObj){
 		res = list->comparator(obj->data,cur->data);
 		switch(res){
 			case 1: //obj is larger than cur
-			case 0: //obj and cur are the same size, but obj before cur
 				prv->next = obj;
 				obj->next = cur;
 				return 1; //exit function
+            case 0: //obj and cur are the same size, don't insert
+                return -1;
 			case -1: //obj is smaller than cur
 				if(!cur->next){ //nothing after cur? Put obj there
 					cur->next = obj;
@@ -192,6 +197,7 @@ int SLRemove(SortedListPtr list, void *newObj){
 	}
 	return 0;
 }
+
 
 /*
  * SLCreateIterator creates an iterator object that will allow the caller
@@ -311,6 +317,16 @@ void * SLGetItem( SortedListIteratorPtr iter ){
 	}
 	else //List has been iterated
 		return 0;
+}
+
+/*Reset the iterator to the head of the list
+ * If the function succeeds, return 1, else return 0
+*/
+int SLResetIterator(SortedListIteratorPtr iter){
+    if(!iter)
+        return 0;
+    iter->curr = iter->list->head;
+    return 1;
 }
 
 

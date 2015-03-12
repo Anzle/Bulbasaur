@@ -184,4 +184,9 @@ SortedListNodePtr SLSearch(SortedListPtr list, void* data);
  */
 void SLUpdateIterator(SortedListIteratorPtr iter);
 
+/*Reset the iterator to the head of the list
+ * If the function succeeds, return 1, else return 0
+*/
+int SLResetIterator(SortedListIteratorPtr iter);
+
 #endif
