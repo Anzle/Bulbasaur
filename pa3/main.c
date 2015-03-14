@@ -121,13 +121,16 @@ int fileRecurse(char * path, IndexerPtr indexMap){
                     if(strcmp(ep->d_name, ".") == 0 || strcmp(ep->d_name, "..")==0)
                         continue;
                     printf("%s \n",ep->d_name); //test directory walking
-                    char* next = (char*) malloc(sizeof(strlen(path)+ strlen(ep->d_name) + 1));
+                    char* next = (char*) malloc(sizeof(strlen(path)+ strlen(ep->d_name) + 2));
                     strcpy(next, path);
+       
+                    if(path[strlen(path)-1] != '/')
+                        strcat(next, "/");
                     strcat(next, ep->d_name);
                     
                     fileRecurse(next, indexMap);
                     
-                    free(next);
+                    
                 }
             
                 (void) closedir (dp);
@@ -151,11 +154,6 @@ int fileRecurse(char * path, IndexerPtr indexMap){
                 tok = tokenize(iptr);
             }
             
-            /*char c;
-            while((c = readInput(iptr)) > -1){
-                printf("%c", c);
-            }
-             */
             return 0;
         }//End if File
     }//end
