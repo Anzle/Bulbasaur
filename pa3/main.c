@@ -179,7 +179,7 @@ int main(int argv, char ** argc){
     }
 	
 	//Open the write file in write only format
-	int writefd = open(argc[1], O_WRONLY);
+	int writefd = open(argc[1], O_CREAT |O_WRONLY, S_IRUSR|S_IWUSR);
     if(writefd < 0){
 		fprintf(stderr, "There was an error opening the index file.\n");
 		return 1;
