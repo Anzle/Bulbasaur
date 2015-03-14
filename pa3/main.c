@@ -13,10 +13,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
-
+#include <unistd.h>
+#include <ctype.h>
+#include "indexer.h"
 //#include "tok.h"
 
-//Use Professor Rusle's code
+//Use Professor Russell's code
 struct input{
 	int		fd;
 	int		length;
@@ -99,7 +101,7 @@ int main(int argv, char ** argc){
     
     //Open the directory/filename in read only format
     int filedesc = open(argc[2], O_RDONLY);
-	int bufferSize = 2048;
+	//int bufferSize = 2048;
     if(filedesc < 0){
         fprintf(stderr, "There was an error obtaining the file descriptor from the Kernel \n");
         return 1;
@@ -109,15 +111,34 @@ int main(int argv, char ** argc){
 	input * iptr = (input*)malloc(sizeof(input));
 	resetInput(iptr, filedesc);
 
+	//Create indexer and insert tokens into it
+	IndexerPtr indexMap = createIndexer();
+	if(!indexMap){
+		fprintf(stderr,"Error creating indexer\n");
+		return 1;
+	}
+	
 	char* tok = tokenize(iptr);
 	while (tok != NULL){
 		printf("%s \n", tok);
-		free(tok);
+		char path[16] = {0};
+		strcpy(path, "/proc/self/fd/");
+		char fdesc[3] = {0};
+		strcat(path, itobase10(fdesc, iptr->fd));
+		//char fileName[100] ={0};
+		//readlink(path, fileName, 100);  //this would be used to find the file name. 
+										  //not sure how to make it work yet.
+		countToken(indexMap, tok, argc[2]);
 		tok = tokenize(iptr);
 	}
-
-	free(iptr);
 	
-
+	char* json = (char*) malloc(30000);
+	memset(json, 0, 30000);
+	toJSON(indexMap, json);
+	printf("%s",json);
+	
+	free(iptr);
+	destroyIndexer(indexMap);
+	
     return 0;
 }

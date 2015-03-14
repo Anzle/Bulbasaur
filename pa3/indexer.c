@@ -4,6 +4,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <stdio.h>
 #include "sorted-list.h"
 #include "indexer.h"
 
@@ -20,7 +22,7 @@ int compareTokenNode(void* t1, void* t2){
 	TokenNodePtr tok1 = (TokenNodePtr) t1;
 	TokenNodePtr tok2 = (TokenNodePtr) t2;
 	
-	return strcomp(t1->token, t2->token);
+	return strcmp(tok1->token, tok2->token);
 }
 
 /*
@@ -38,7 +40,7 @@ void destroyTokenNode(void* t){
 }
 
 //Creates and returns a TokenNodePtr. Returns null if error
-TokenNodePtr createTokenNode(const char * tok){
+TokenNodePtr createTokenNode(char * tok){
 	if(!tok)
 		return NULL;
 		
@@ -91,7 +93,7 @@ void destroyFileNode(void* f){
 }
 
 //Create new FileNodePtr and return it. Returns NULL on error
-FileNodePtr createFileNode(const char* name){
+FileNodePtr createFileNode(char* name){
 	if(!name)
 		return NULL;
 		
@@ -131,7 +133,14 @@ void destroyIndexer(IndexerPtr i){
 	free(i);
 }
 
-int countToken(IndexerPtr ind, char* tok, const char* file){
+//converts an integer to its ascii equivalent
+char *itobase10(char *buf, int value) {
+    sprintf(buf, "%d", value);
+    return buf;
+}
+
+//inserts or updates the token count
+int countToken(IndexerPtr ind, char* tok, char* file){
 	if(!ind){
 		return -1; //error, null indexer
 	}
@@ -144,15 +153,15 @@ int countToken(IndexerPtr ind, char* tok, const char* file){
 		tok[i] = tolower(tok[i]);
 		i++;
 	}
-	SortedListPtr tokList = ind[(int)(tok[0] - 'a')];
+	i = (int)(tok[0] -'a');
+	SortedListPtr tokList = ind->index[i];
 	
 	if(!tokList){ //No tokens yet that start with this letter
-		ind[(int)(tok[0] - 'a')] = SLCreate(&compareTokenNode, &destroyTokenNode);
+		ind->index[i] = SLCreate(&compareTokenNode, &destroyTokenNode);
 		
 		TokenNodePtr tkPtr = createTokenNode(tok);
 		if(!tkPtr){
 			return -1;
-			';
 		}
 		
 		tkPtr->files = SLCreate(&compareFileNode, &destroyFileNode);
@@ -168,7 +177,7 @@ int countToken(IndexerPtr ind, char* tok, const char* file){
 		fPtr->frequency++; //update the frequency count for the token in the file
 		
 		SLInsert(tkPtr->files, fPtr); //insert the file into the token list		
-		SLInsert(ind[(int)(tok[0] - 'a')], tkPtr); //insert token into map
+		SLInsert(ind->index[i], tkPtr); //insert token into map
 		return 0;
 	}
 	else { //tokens starting with that letter exist
@@ -183,6 +192,7 @@ int countToken(IndexerPtr ind, char* tok, const char* file){
 			if(strcmp(tokNode->token, tok) == 0){
 				break;
 			}
+			tokNode = (TokenNodePtr) SLNextItem(tokIter);
 		}
 		SLDestroyIterator(tokIter);
 		
@@ -205,7 +215,7 @@ int countToken(IndexerPtr ind, char* tok, const char* file){
 			fPtr->frequency++; //update the frequency count for the token in the file
 			
 			SLInsert(tkPtr->files, fPtr); //insert the file into the token list		
-			SLInsert(ind[(int)(tok[0] - 'a')], tkPtr); //insert token into map
+			SLInsert(ind->index[i], tkPtr); //insert token into map
 			return 0;
 		}else{ //token in list. check for file
 			
@@ -218,6 +228,7 @@ int countToken(IndexerPtr ind, char* tok, const char* file){
 				if(strcmp(fileNode->fileName, file) == 0){
 					break;
 				}
+				fileNode = (FileNodePtr) SLNextItem(fileIter);
 			}
 			SLDestroyIterator(fileIter);
 			
@@ -237,5 +248,52 @@ int countToken(IndexerPtr ind, char* tok, const char* file){
 			}
 		}
 		return -1;
-	}	
+	}
+}
+
+//returns a string of the JSON output
+void toJSON(struct Indexer* ind, char* json){
+	if(!ind || !json){
+		return;
+	}
+	
+	strcpy(json,"{\"list\" : [\n");
+	int x;
+	for(x = 0; x < 26; x++){
+		if(ind->index[x] != NULL){
+			SortedListIteratorPtr iterTok = SLCreateIterator(ind->index[x]);
+			TokenNodePtr tokNode = (TokenNodePtr) SLGetItem(iterTok);
+			
+			while(tokNode){
+				strcat(json, "\t{\"");
+				strcat(json, tokNode->token);
+				strcat(json, "\" : [\n");
+				
+				SortedListIteratorPtr iterFile = SLCreateIterator(tokNode->files);
+				FileNodePtr fileNode = (FileNodePtr) SLGetItem(iterFile);
+				
+				strcat(json, "\t\t{\"");
+				strcat(json, fileNode->fileName);
+				strcat(json, "\" : ");
+				char num[5] = {0};
+				strcat(json, itobase10(num, fileNode->frequency));
+				strcat(json, "}");
+				
+				fileNode = (FileNodePtr) SLNextItem(iterFile);
+				while(fileNode){
+					strcat(json, ",\n");
+					strcat(json, "\t\t{\"");
+					strcat(json, fileNode->fileName);
+					strcat(json, "\" : ");
+					char num1[5] = {0};
+					strcat(json, itobase10(num1, fileNode->frequency));
+					strcat(json, "}");
+					fileNode = (FileNodePtr) SLNextItem(iterFile);
+				}
+				strcat(json,"\n\t]},\n");
+				tokNode = (TokenNodePtr) SLNextItem(iterTok);
+			}
+		}
+	}
+	strcat(json,"]}\n\0");
 }

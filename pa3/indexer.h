@@ -36,8 +36,11 @@ typedef struct TokenNode* TokenNodePtr;
 typedef struct FileNode{
 	char* fileName;
 	int frequency;
-}
+} FileNode;
 typedef struct FileNode* FileNodePtr;
+
+//Create new FileNodePtr and return it. Returns NULL on error
+FileNodePtr createFileNode(char* name);
 
 /*
  * Comparator function for FileNode. Compares based on frequency.
@@ -53,6 +56,9 @@ int compareFileNode(void* f1, void* f2);
  */
 void destroyFileNode(void* f);
 
+//Creates and returns a TokenNodePtr. Returns null if error
+TokenNodePtr createTokenNode(char * tok);
+
 /*
  * Comparator function for TokenNode. Compares based on ascii of token.
  * Returns 
@@ -65,4 +71,20 @@ int compareTokenNode(void* t1, void* t2);
  */
 void destroyTokenNode(void* t);
 
+//Create new indexer object and return it 
+IndexerPtr createIndexer();
+
+//converts an integer to its ascii equivalent
+char *itobase10(char *buf, int value);
+
+//inserts or updates the token count
+int countToken(IndexerPtr ind, char* tok, char* file);
+
+//Free all data stored in the indexer
+void destroyIndexer(IndexerPtr i);
+
+/*
+ *	Returns JSON string of the map
+ */
+ void toJSON(struct Indexer*, char*);
 #endif
