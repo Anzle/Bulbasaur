@@ -3,7 +3,7 @@
  * main.c
  * using this site for System call information
  * http://codewiki.wikidot.com/system-calls
- *
+ * http://stackoverflow.com/questions/146924/how-can-i-tell-if-a-given-path-is-a-directory-or-a-file-c-c
  * Recurse through a file/directory and do the thing
 */
 #include <stdlib.h>
@@ -15,8 +15,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <dirent.h>
+#include <features.h>
 #include "indexer.h"
-//#include "tok.h"
+
+
+
 
 //Use Professor Russell's code
 struct input{
@@ -51,6 +55,9 @@ int readInput(struct input* iptr){
     }
 }
 
+/*
+ * Tokenize the file with alphanumbric stuffz
+ */
 char * tokenize(input * iptr){
 	
 	int length = 0, size = 100;
@@ -94,6 +101,70 @@ char * tokenize(input * iptr){
 	return NULL;
 }
 
+/*
+ * Recurse through the file structure and if the input is a file
+ * tokenize the contents of the file
+ * return 0 on success
+ */
+int fileRecurse(char * path, IndexerPtr indexMap){
+    struct stat s;
+    if( stat(path,&s) > -1 ){
+        if( S_ISDIR(s.st_mode) ){
+            printf("Location %s is a Directory\n", path);
+
+            DIR *dp;
+            struct dirent *ep;
+
+            dp = opendir (path);
+            if (dp != NULL){
+                while ((ep = readdir (dp))){
+                    if(strcmp(ep->d_name, ".") == 0 || strcmp(ep->d_name, "..")==0)
+                        continue;
+                    printf("%s \n",ep->d_name); //test directory walking
+                    char* next = (char*) malloc(sizeof(strlen(path)+ strlen(ep->d_name) + 1));
+                    strcpy(next, path);
+                    strcat(next, ep->d_name);
+                    
+                    fileRecurse(next, indexMap);
+                    
+                    free(next);
+                }
+            
+                (void) closedir (dp);
+            }
+            else
+                perror ("Couldn't open the directory\n");
+
+            return 0;
+        }//END if Directory
+        
+        else if( S_ISREG(s.st_mode) ){
+            printf("Location %s is a File\n", path);
+            int filedesc = open(path, O_RDONLY);
+            input * iptr = (input*)malloc(sizeof(input));
+
+            resetInput(iptr, filedesc);
+            char* tok = tokenize(iptr);
+            while(tok){
+                countToken(indexMap, tok, path);
+                tok = tokenize(iptr);
+            }
+            
+            /*char c;
+            while((c = readInput(iptr)) > -1){
+                printf("%c", c);
+            }
+             */
+            return 0;
+        }//End if File
+    }//end
+    else{
+        printf("Failed on string %s\n",path);
+        return 1;
+    }
+    return 1;
+ }   
+
 int main(int argv, char ** argc){
 
     if(argv != 3)
@@ -125,7 +196,12 @@ int main(int argv, char ** argc){
 		return 1;
 	}
 	
-	char* tok = tokenize(iptr);
+    if(fileRecurse(argc[2], indexMap) == 1){
+        fprintf(stderr, "There was an error recursing the files\n");
+        return 1;
+    }
+    
+/* 	char* tok = tokenize(iptr);
 	while (tok != NULL){
 		//printf("%s \n", tok);
 		char path[16] = {0};
@@ -137,7 +213,7 @@ int main(int argv, char ** argc){
 										  //not sure how to make it work yet.
 		countToken(indexMap, tok, argc[2]);
 		tok = tokenize(iptr);
-	}
+	} */
 	
 	char* json = (char*) malloc(30000);
 	memset(json, 0, 30000);
