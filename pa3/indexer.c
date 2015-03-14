@@ -22,7 +22,16 @@ int compareTokenNode(void* t1, void* t2){
 	TokenNodePtr tok1 = (TokenNodePtr) t1;
 	TokenNodePtr tok2 = (TokenNodePtr) t2;
 	
-	return strcmp(tok1->token, tok2->token);
+	int result = strcmp(tok1->token, tok2->token);
+	if(result > 0){
+		return -1;
+	}
+	else if(result < 0){
+		return 1;
+	}
+	else{
+		return 0;
+	}
 }
 
 /*

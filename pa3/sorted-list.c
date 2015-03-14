@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include "sorted-list.h"
+#include <stdio.h>
 
 /*
  * SLCreate creates a new, empty sorted list.  The caller must provide
@@ -111,21 +112,22 @@ int SLInsert(SortedListPtr list, void *newObj){
 	cur = cur->next;
 	while(cur){
 		res = list->comparator(obj->data,cur->data);
-		switch(res){
-			case 1: //obj is larger than cur
-				prv->next = obj;
-				obj->next = cur;
+		if(res > 0){ //obj is larger than cur
+			prv->next = obj;
+			obj->next = cur;
+			return 1;
+		}
+		else if(res == 0){ //obj and cur are the same size, don't insert
+			return -1;
+		}
+		else{
+			if(!cur->next){ //nothing after cur? Put obj there
+				cur->next = obj;
 				return 1; //exit function
-            case 0: //obj and cur are the same size, don't insert
-                return -1;
-			case -1: //obj is smaller than cur
-				if(!cur->next){ //nothing after cur? Put obj there
-					cur->next = obj;
-					return 1; //exit function
-				}
-				prv = cur;
-				cur = cur->next;
-		}//end switch	
+			}
+			prv = cur;
+			cur = cur->next;
+		}
 	}//end while
 
 	//I don't know how, but we done messed up
