@@ -106,7 +106,14 @@ int main(int argv, char ** argc){
         fprintf(stderr, "There was an error obtaining the file descriptor from the Kernel \n");
         return 1;
     }
-    
+	
+	//Open the write file in write only format
+	int writefd = open(argc[1], O_WRONLY);
+    if(writefd < 0){
+		fprintf(stderr, "There was an error opening the index file.\n");
+		return 1;
+	}
+	
 	//Set up the input reading buffer
 	input * iptr = (input*)malloc(sizeof(input));
 	resetInput(iptr, filedesc);
@@ -120,7 +127,7 @@ int main(int argv, char ** argc){
 	
 	char* tok = tokenize(iptr);
 	while (tok != NULL){
-		printf("%s \n", tok);
+		//printf("%s \n", tok);
 		char path[16] = {0};
 		strcpy(path, "/proc/self/fd/");
 		char fdesc[3] = {0};
@@ -135,10 +142,29 @@ int main(int argv, char ** argc){
 	char* json = (char*) malloc(30000);
 	memset(json, 0, 30000);
 	toJSON(indexMap, json);
-	printf("%s",json);
-	
+	if(json){
+		if(write(writefd, json, strlen(json)) < 0){
+			fprintf(stderr, "Error writing to output file.\n");
+			close(iptr->fd);
+			close(writefd);
+			free(iptr);
+			free(json);
+			destroyIndexer(indexMap);
+			return 1;
+		}
+		printf("Output written to file.\n");
+		close(iptr->fd);
+		close(writefd);
+		free(iptr);
+		free(json);
+		destroyIndexer(indexMap);
+		return 0;
+	}
+	fprintf(stderr, "Error creating JSON string\n");
+	close(iptr->fd);
+	close(writefd);
 	free(iptr);
+	free(json);
 	destroyIndexer(indexMap);
-	
-    return 0;
+	return 1;
 }
