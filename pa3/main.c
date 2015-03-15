@@ -154,7 +154,7 @@ int fileRecurse(char * path, IndexerPtr indexMap){
             resetInput(iptr, filedesc);
             char* tok = tokenize(iptr);
             while(tok){
-				printf("%s\n",tok);
+				//printf("%s\n",tok);
                 countToken(indexMap, tok, path);
                 tok = tokenize(iptr);
             }
