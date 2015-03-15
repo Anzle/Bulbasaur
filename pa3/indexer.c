@@ -43,7 +43,7 @@ void destroyTokenNode(void* t){
 	}
 	
 	TokenNodePtr tok = (TokenNodePtr) t;
-	
+	free(tok->token);
 	SLDestroy(tok->files);
 	free(tok);
 }
@@ -153,7 +153,8 @@ int countToken(IndexerPtr ind, char* tok, char* file){
 	if(!ind){
 		return -1; //error, null indexer
 	}
-	
+	if(tok == NULL)
+        return -5;
 	//Check if the token is already in the map. If not, create the node and insert it.
 	//If so, check if the file is already in the map. If yes, update the count. If no,
 	//create node and insert it into the list.

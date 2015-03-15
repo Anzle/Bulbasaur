@@ -63,7 +63,7 @@ char * tokenize(input * iptr){
 	int length = 0, size = 100;
 	char * tok = NULL, * extend = NULL;
 	char c;
-	tok = (char*)malloc(sizeof(char)*(size + 1));
+	tok = (char*)calloc(sizeof(char)*(size + 1), 1);
 	tok[size] = '\0'; //counts as a string now
 	
 	//Loop until we create a token
@@ -126,14 +126,15 @@ int fileRecurse(char * path, IndexerPtr indexMap){
                         fileRecurse(ep->d_name, indexMap);
                     }
                     else{
-                        char* next = (char*) malloc(sizeof(strlen(path)+ strlen(ep->d_name) + 2));
+                        char* next = (char *) malloc(sizeof(char*)*(strlen(path)+strlen(ep->d_name)+2));
                         strcpy(next, path);
            
                         if(path[strlen(path)-1] != '/')
                             strcat(next, "/");
                         strcat(next, ep->d_name);
-                        
+                       // free(path);
                         fileRecurse(next, indexMap);
+                        
                     }
                     
                 }
@@ -147,7 +148,9 @@ int fileRecurse(char * path, IndexerPtr indexMap){
         }//END if Directory
         
         else if( S_ISREG(s.st_mode) ){
-            printf("Location %s is a File\n", path);
+            if(strcmp(path, ".txt") == 0)
+                return 0;
+           printf("Location %s is a File\n", path);
             int filedesc = open(path, O_RDONLY);
             input * iptr = (input*)malloc(sizeof(input));
 
@@ -158,6 +161,8 @@ int fileRecurse(char * path, IndexerPtr indexMap){
                 countToken(indexMap, tok, path);
                 tok = tokenize(iptr);
             }
+            //close(filedesc);
+           // free(iptr);
             
             return 0;
         }//End if File
@@ -175,12 +180,12 @@ int main(int argv, char ** argc){
         fprintf(stderr, "Use as follows: index <inverted-index> <directory/file>\n");
     
     //Open the directory/filename in read only format
-    int filedesc = open(argc[2], O_RDONLY);
+   // int filedesc = open(argc[2], O_RDONLY);
 	//int bufferSize = 2048;
-    if(filedesc < 0){
-        fprintf(stderr, "There was an error obtaining the file descriptor from the Kernel \n");
-        return 1;
-    }
+    //if(filedesc < 0){
+    //    fprintf(stderr, "There was an error obtaining the file descriptor from the Kernel \n");
+   //     return 1;
+   // }
 	
 	//Open the write file in write only format
 	int writefd = open(argc[1], O_CREAT |O_WRONLY, S_IRUSR|S_IWUSR);
@@ -190,8 +195,8 @@ int main(int argv, char ** argc){
 	}
 	
 	//Set up the input reading buffer
-	input * iptr = (input*)malloc(sizeof(input));
-	resetInput(iptr, filedesc);
+	//input * iptr = (input*)malloc(sizeof(input));
+	//resetInput(iptr, filedesc);
 
 	//Create indexer and insert tokens into it
 	IndexerPtr indexMap = createIndexer();
@@ -219,31 +224,32 @@ int main(int argv, char ** argc){
 		tok = tokenize(iptr);
 	} */
 	
-	char* json = (char*) malloc(30000);
-	memset(json, 0, 30000);
+	char* json = (char*) malloc(80000000);
+	memset(json, 0, 300000);
 	toJSON(indexMap, json);
 	if(json){
 		if(write(writefd, json, strlen(json)) < 0){
 			fprintf(stderr, "Error writing to output file.\n");
-			close(iptr->fd);
+		//	close(iptr->fd);
 			close(writefd);
-			free(iptr);
+		//	free(iptr);
 			free(json);
 			destroyIndexer(indexMap);
 			return 1;
 		}
 		printf("Output written to file.\n");
-		close(iptr->fd);
+	//	close(iptr->fd);
 		close(writefd);
-		free(iptr);
+		//free(iptr);
 		free(json);
 		destroyIndexer(indexMap);
 		return 0;
 	}
 	fprintf(stderr, "Error creating JSON string\n");
-	close(iptr->fd);
+    
+	//close(iptr->fd);
 	close(writefd);
-	free(iptr);
+	//free(iptr);
 	free(json);
 	destroyIndexer(indexMap);
 	return 1;
