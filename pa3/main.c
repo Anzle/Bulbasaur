@@ -118,18 +118,23 @@ int fileRecurse(char * path, IndexerPtr indexMap){
             dp = opendir (path);
             if (dp != NULL){
                 while ((ep = readdir (dp))){
-                    if(strcmp(ep->d_name, ".") == 0 || strcmp(ep->d_name, "..")==0)
+                    if(strcmp(ep->d_name, "/..")==0 || strcmp(ep->d_name, "..")==0 || strcmp(ep->d_name, "/.")==0 || strcmp(ep->d_name, ".")==0)
                         continue;
-                    printf("%s \n",ep->d_name); //test directory walking
-                    char* next = (char*) malloc(sizeof(strlen(path)+ strlen(ep->d_name) + 2));
-                    strcpy(next, path);
-       
-                    if(path[strlen(path)-1] != '/')
-                        strcat(next, "/");
-                    strcat(next, ep->d_name);
-                    
-                    fileRecurse(next, indexMap);
-                    
+                    //printf("%s \n",ep->d_name); //test directory walking
+                   
+                    if(strcmp(path, "./") == 0 || strcmp(path, ".") == 0){
+                        fileRecurse(ep->d_name, indexMap);
+                    }
+                    else{
+                        char* next = (char*) malloc(sizeof(strlen(path)+ strlen(ep->d_name) + 2));
+                        strcpy(next, path);
+           
+                        if(path[strlen(path)-1] != '/')
+                            strcat(next, "/");
+                        strcat(next, ep->d_name);
+                        
+                        fileRecurse(next, indexMap);
+                    }
                     
                 }
             
